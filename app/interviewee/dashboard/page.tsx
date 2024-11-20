@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Link from 'next/link'
 
 interface Position {
   id: string
@@ -107,9 +108,11 @@ export default function IntervieweeDashboard() {
               <p className="text-sm mt-2">{position.description}</p>
             )}
             <div className="mt-4 flex justify-between items-center">
-              <Button variant="outline" size="sm">
-                View Details
-              </Button>
+              <Link href={`/interviewee/${position.id}`}>
+                <Button variant="outline" size="sm">
+                  View Details
+                </Button>
+              </Link>
               <Button size="sm">
                 Book ($19.99)
               </Button>
