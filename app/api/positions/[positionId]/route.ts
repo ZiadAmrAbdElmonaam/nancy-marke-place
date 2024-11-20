@@ -1,24 +1,33 @@
-import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
-  req: Request,
+  request: Request,
   { params }: { params: { positionId: string } }
 ) {
   try {
-    const position = await db.position.findUnique({
+    const position = await prisma.position.findUnique({
       where: {
-        id: params.positionId,
+        id: params.positionId
       },
+      include: {
+        socialLinks: true
+      }
     });
 
     if (!position) {
-      return new NextResponse("Position not found", { status: 404 });
+      return NextResponse.json(
+        { error: 'Position not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(position);
   } catch (error) {
-    console.error("[POSITION_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error('Error fetching position:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch position' },
+      { status: 500 }
+    );
   }
 } 

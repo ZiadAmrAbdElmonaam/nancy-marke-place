@@ -1,68 +1,110 @@
-import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
-export async function GET() {
+interface SocialLink {
+  platform: string;
+  url: string;
+}
+
+interface CreatePositionPayload {
+  title: string;
+  yearsOfExperience: number;
+  requiredSkills: string[];
+  description: string;
+  socialLinks?: SocialLink[];
+}
+
+export async function POST(request: Request) {
   try {
-    const positions = await db.position.findMany({
-      orderBy: {
-        createdAt: 'desc'
+    const body = await request.json() as CreatePositionPayload;
+    
+    console.log('Received body:', body);
+    console.log('Social links:', body.socialLinks);
+    
+    // Validate the request body
+    if (!body || !body.title || !body.yearsOfExperience || !body.requiredSkills || !body.description) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+    
+    let user = await prisma.user.findFirst({
+      where: {
+        email: 'anonymous@example.com'
       }
     });
 
-    return NextResponse.json(positions);
-  } catch (error) {
-    console.error("[POSITIONS_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
-  }
-}
-
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    
-    const { title, yearsOfExperience, requiredSkills, description } = body;
-
-    console.log("Received data:", {
-      title,
-      yearsOfExperience,
-      requiredSkills,
-      description
-    });
-
-    // Validate required fields
-    if (!title || typeof title !== 'string') {
-      return new NextResponse("Invalid title", { status: 400 });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: 'anonymous@example.com',
+          name: 'Anonymous User'
+        }
+      });
     }
 
-    if (!yearsOfExperience || typeof yearsOfExperience !== 'number') {
-      return new NextResponse("Invalid years of experience", { status: 400 });
-    }
-
-    if (!requiredSkills || !Array.isArray(requiredSkills) || requiredSkills.length === 0) {
-      return new NextResponse("Invalid required skills", { status: 400 });
-    }
-
-    const position = await db.position.create({
-      data: {
-        title: title.trim(),
-        yearsOfExperience,
-        requiredSkills: requiredSkills.map(skill => skill.trim()).filter(Boolean),
-        description: description?.trim() || null,
-        interviewerId: "anonymous"
+    const positionData: Prisma.PositionCreateInput = {
+      title: body.title,
+      yearsOfExperience: body.yearsOfExperience,
+      requiredSkills: Array.isArray(body.requiredSkills) ? body.requiredSkills : [],
+      description: body.description,
+      interviewer: {
+        connect: { id: user.id }
       },
+      socialLinks: body.socialLinks && body.socialLinks.length > 0 ? {
+        create: body.socialLinks.map(link => ({
+          platform: link.platform,
+          url: link.url
+        }))
+      } : undefined
+    };
+
+    console.log('Position data to create:', positionData);
+
+    // Create position with social links
+    const position = await prisma.position.create({
+      data: positionData,
+      include: {
+        interviewer: true,
+        socialLinks: true
+      }
     });
 
+    console.log('Created position with links:', position);
     return NextResponse.json(position);
   } catch (error) {
-    // Enhanced error logging
-    console.error("[POSITIONS_POST] Detailed error:", {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+    console.error('Position creation error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to create position', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+} 
+
+export async function GET() {
+  try {
+    const positions = await prisma.position.findMany({
+      include: {
+        interviewer: true,
+        socialLinks: true
+      }
     });
     
-    return new NextResponse(
-      error instanceof Error ? error.message : "Internal Error", 
+    return NextResponse.json(positions);
+  } catch (error) {
+    console.error('Error fetching positions:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch positions',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
