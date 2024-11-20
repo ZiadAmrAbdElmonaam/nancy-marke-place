@@ -22,6 +22,13 @@ export async function POST(req: Request) {
     
     const { title, yearsOfExperience, requiredSkills, description } = body;
 
+    console.log("Received data:", {
+      title,
+      yearsOfExperience,
+      requiredSkills,
+      description
+    });
+
     // Validate required fields
     if (!title || typeof title !== 'string') {
       return new NextResponse("Invalid title", { status: 400 });
@@ -47,7 +54,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json(position);
   } catch (error) {
-    console.error("[POSITIONS_POST]", error);
+    // Enhanced error logging
+    console.error("[POSITIONS_POST] Detailed error:", {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
     return new NextResponse(
       error instanceof Error ? error.message : "Internal Error", 
       { status: 500 }

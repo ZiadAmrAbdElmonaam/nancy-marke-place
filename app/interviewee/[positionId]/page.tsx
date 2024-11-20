@@ -1,166 +1,138 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useParams } from 'next/navigation'
 
-interface Position {
-  id: string;
-  title: string;
-  yearsOfExperience: number;
-  requiredSkills: string[];
-  description: string | null;
-  interviewerId: string;
-  createdAt: string;
+interface Interview {
+  id: number
+  position: string
+  experience: string
+  skills: string[]
+  description?: string
+  interviewer?: {
+    name: string
+    title: string
+    company: string
+    yearsOfExperience: number
+    socialLinks: {
+      linkedin?: string
+      twitter?: string
+      facebook?: string
+    }
+  }
 }
 
-interface Interviewer {
-  name: string;
-  socialMedia: {
-    linkedin?: string;
-    github?: string;
-    twitter?: string;
-  };
-  expertise: string[];
-}
-
-export default function PositionDetails({ 
-  params 
-}: { 
-  params: { positionId: string } 
-}) {
-  const [position, setPosition] = useState<Position | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function InterviewDetails() {
+  const params = useParams()
+  const [interview, setInterview] = useState<Interview | null>(null)
 
   useEffect(() => {
-    const fetchPositionDetails = async () => {
-      try {
-        const response = await fetch(`/api/positions/${params.positionId}`);
-        if (!response.ok) throw new Error('Failed to fetch position details');
-        const data = await response.json();
-        setPosition(data);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
+    const mockInterview: Interview = {
+      id: Number(params.id),
+      position: 'Frontend Developer',
+      experience: '5 years',
+      skills: ['React', 'TypeScript', 'Node.js'],
+      description: 'This interview focuses on modern frontend development practices and React ecosystem.',
+      interviewer: {
+        name: 'John Smith',
+        title: 'Senior Frontend Engineer',
+        company: 'Tech Solutions Inc.',
+        yearsOfExperience: 8,
+        socialLinks: {
+          linkedin: 'https://linkedin.com/in/johnsmith',
+          twitter: 'https://twitter.com/johnsmith',
+          facebook: 'https://facebook.com/johnsmith'
+        }
       }
-    };
+    }
+    setInterview(mockInterview)
+  }, [params.id])
 
-    fetchPositionDetails();
-  }, [params.positionId]);
-
-  if (loading) {
-    return <div className="container mx-auto p-6">Loading...</div>;
+  if (!interview) {
+    return <div>Loading...</div>
   }
-
-  if (!position) {
-    return (
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Position not found</h1>
-        <Link href="/interviewee/dashboard">
-          <Button>Back to Dashboard</Button>
-        </Link>
-      </div>
-    );
-  }
-
-  // Mock interviewer data (replace with real data from your database)
-  const interviewer: Interviewer = {
-    name: "John Doe",
-    socialMedia: {
-      linkedin: "https://linkedin.com/in/johndoe",
-      github: "https://github.com/johndoe",
-      twitter: "https://twitter.com/johndoe"
-    },
-    expertise: ["System Design", "Algorithms", "Web Development"]
-  };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <Link href="/interviewee/dashboard">
-          <Button variant="outline" className="mb-4">
-            ← Back to Dashboard
-          </Button>
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Position Details */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h1 className="text-2xl font-bold mb-4">{position.title}</h1>
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                <span className="font-semibold">Experience Required:</span>{" "}
-                {position.yearsOfExperience} years
-              </p>
-              <div>
-                <span className="font-semibold">Required Skills:</span>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {position.requiredSkills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+    <div className="container mx-auto px-4 py-12">
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Interview #{interview.id}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Interviewer Information */}
+          <div className="border-b pb-4">
+            <h3 className="font-semibold mb-3">Your Interviewer</h3>
+            <div className="space-y-1">
+              <p><span className="font-medium">Name:</span> {interview.interviewer?.name}</p>
+              <p><span className="font-medium">Title:</span> {interview.interviewer?.title}</p>
+              <p><span className="font-medium">Company:</span> {interview.interviewer?.company}</p>
+              <p><span className="font-medium">Experience:</span> {interview.interviewer?.yearsOfExperience} years</p>
+              <div className="pt-3">
+                <p className="font-medium mb-2">Connect with {interview.interviewer?.name.split(' ')[0]}:</p>
+                <div className="flex items-center gap-4">
+                  {interview.interviewer?.socialLinks.linkedin && (
+                    <a 
+                      href={interview.interviewer.socialLinks.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
                     >
-                      {skill}
-                    </span>
-                  ))}
+                      LinkedIn
+                    </a>
+                  )}
+                  {interview.interviewer?.socialLinks.linkedin && interview.interviewer?.socialLinks.twitter && (
+                    <span className="text-gray-300">|</span>
+                  )}
+                  {interview.interviewer?.socialLinks.twitter && (
+                    <a 
+                      href={interview.interviewer.socialLinks.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
+                    >
+                      Twitter
+                    </a>
+                  )}
+                  {interview.interviewer?.socialLinks.twitter && interview.interviewer?.socialLinks.facebook && (
+                    <span className="text-gray-300">|</span>
+                  )}
+                  {interview.interviewer?.socialLinks.facebook && (
+                    <a 
+                      href={interview.interviewer.socialLinks.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-900 hover:text-blue-600 transition-colors duration-200"
+                    >
+                      Facebook
+                    </a>
+                  )}
                 </div>
               </div>
-              {position.description && (
-                <div>
-                  <span className="font-semibold">Description:</span>
-                  <p className="mt-2 text-gray-600">{position.description}</p>
-                </div>
-              )}
             </div>
           </div>
-        </div>
 
-        {/* Interviewer Profile */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold mb-4">Interviewer Profile</h2>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold">Name</h3>
-              <p>{interviewer.name}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Social Media</h3>
-              <div className="space-y-2">
-                {Object.entries(interviewer.socialMedia).map(([platform, url]) => (
-                  <a
-                    key={platform}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 block"
-                  >
-                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                  </a>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Expertise</h3>
-              <div className="flex flex-wrap gap-2">
-                {interviewer.expertise.map((skill) => (
-                  <span
-                    key={skill}
-                    className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
+          {/* Interview Description */}
+          <div className="border-b pb-4">
+            <h3 className="font-semibold mb-3">Interview Overview</h3>
+            <p className="text-gray-700">{interview.description}</p>
+          </div>
+
+          {/* Position Details */}
+          <div className="border-b pb-4">
+            <h3 className="font-semibold mb-3">Position Requirements</h3>
+            <div className="space-y-1">
+              <p><span className="font-medium">Position:</span> {interview.position}</p>
+              <p><span className="font-medium">Experience Required:</span> {interview.experience}</p>
+              <p><span className="font-medium">Required Skills:</span> {interview.skills.join(', ')}</p>
             </div>
           </div>
-          <Button className="w-full mt-6">
-            Book Interview ($19.99)
-          </Button>
-        </div>
-      </div>
+
+          {/* Actions */}
+            <Button>Book Interview ($19.99)</Button>
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 } 
