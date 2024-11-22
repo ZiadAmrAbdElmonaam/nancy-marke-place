@@ -15,6 +15,7 @@ model User {
   email     String     @unique
   name      String
   positions Position[]
+  interviewerProfile InterviewerProfile?
 }
 
 model Position {
@@ -50,4 +51,21 @@ model SocialLink {
   url        String
   position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
   positionId String
+}
+
+model InterviewerProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  title         String
+  imageUrl      String?
+  experience    Int
+  description   String    @db.Text
+  country       String    // Added field
+  company       String    // Added field
+  linkedin      String?
+  github        String?
+  twitter       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 } 
