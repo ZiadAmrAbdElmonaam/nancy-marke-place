@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { Search, Briefcase, Clock } from 'lucide-react'
+import { Search, Briefcase } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -36,8 +36,10 @@ export default function IntervieweeDashboard() {
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     techStack: '',
-    experience: '',
-    domain: ''
+    programmingLanguage: '',
+    domain: '',
+    minPrice: '',
+    maxPrice: ''
   })
 
   useEffect(() => {
@@ -67,9 +69,9 @@ export default function IntervieweeDashboard() {
       )
     }
 
-    if (filters.experience) {
+    if (filters.programmingLanguage) {
       filtered = filtered.filter(interview => 
-        interview.interviewerProfile.experience <= parseInt(filters.experience)
+        interview.programmingLanguage.toLowerCase().includes(filters.programmingLanguage.toLowerCase())
       )
     }
 
@@ -79,7 +81,28 @@ export default function IntervieweeDashboard() {
       )
     }
 
+    if (filters.minPrice) {
+      const minPrice = parseFloat(filters.minPrice)
+      filtered = filtered.filter(interview => interview.price >= minPrice)
+    }
+
+    if (filters.maxPrice) {
+      const maxPrice = parseFloat(filters.maxPrice)
+      filtered = filtered.filter(interview => interview.price <= maxPrice)
+    }
+
     setFilteredInterviews(filtered)
+  }
+
+  const clearFilters = () => {
+    setFilters({
+      techStack: '',
+      programmingLanguage: '',
+      domain: '',
+      minPrice: '',
+      maxPrice: ''
+    })
+    setFilteredInterviews(interviews)
   }
 
   if (loading) {
@@ -95,7 +118,7 @@ export default function IntervieweeDashboard() {
           <CardTitle>Search Interviews</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div>
               <label htmlFor="techStack" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Tech Stack</label>
               <Input
@@ -107,13 +130,12 @@ export default function IntervieweeDashboard() {
             </div>
 
             <div>
-              <label htmlFor="experience" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Max Experience Required</label>
+              <label htmlFor="programmingLanguage" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Programming Language</label>
               <Input
-                id="experience"
-                type="number"
-                value={filters.experience}
-                onChange={(e) => setFilters(prev => ({ ...prev, experience: e.target.value }))}
-                placeholder="Years of experience"
+                id="programmingLanguage"
+                value={filters.programmingLanguage}
+                onChange={(e) => setFilters(prev => ({ ...prev, programmingLanguage: e.target.value }))}
+                placeholder="e.g., JavaScript, Python"
               />
             </div>
 
@@ -132,9 +154,34 @@ export default function IntervieweeDashboard() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <label htmlFor="minPrice" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Min Price ($)</label>
+              <Input
+                id="minPrice"
+                type="number"
+                value={filters.minPrice}
+                onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                placeholder="Min price"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="maxPrice" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Max Price ($)</label>
+              <Input
+                id="maxPrice"
+                type="number"
+                value={filters.maxPrice}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                placeholder="Max price"
+              />
+            </div>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-between">
+          <Button variant="outline" onClick={clearFilters}>
+            Clear Filters
+          </Button>
           <Button onClick={handleSearch}>
             <Search className="mr-2 h-4 w-4" /> Search
           </Button>
@@ -153,10 +200,6 @@ export default function IntervieweeDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Clock className="mr-2 h-4 w-4" />
-                  Experience Required: {interview.interviewerProfile.experience} years
-                </div>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">{interview.techStack}</Badge>
                   <Badge variant="secondary">{interview.programmingLanguage}</Badge>

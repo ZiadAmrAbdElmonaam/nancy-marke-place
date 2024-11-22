@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Briefcase, Clock, Building } from 'lucide-react'
+import { Briefcase, Building } from 'lucide-react'
 
 interface Interview {
   id: string
@@ -16,7 +16,6 @@ interface Interview {
   questions: string[]
   interviewerProfile: {
     title: string
-    experience: number
     company: string
     country: string
   }
@@ -61,10 +60,6 @@ export default function InterviewDetailsClient({ interviewId }: { interviewId: s
               <div className="flex items-center text-sm">
                 <Building className="mr-2 h-4 w-4" />
                 {interview.interviewerProfile.company}
-              </div>
-              <div className="flex items-center text-sm">
-                <Clock className="mr-2 h-4 w-4" />
-                {interview.interviewerProfile.experience} years experience
               </div>
             </div>
           </CardDescription>
