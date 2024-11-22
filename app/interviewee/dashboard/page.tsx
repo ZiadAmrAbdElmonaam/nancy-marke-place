@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { toast } from 'sonner'
 
 interface Interview {
   id: string
@@ -41,6 +42,7 @@ export default function IntervieweeDashboard() {
     minPrice: '',
     maxPrice: ''
   })
+  const [bookingId, setBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInterviews = async () => {
@@ -104,6 +106,36 @@ export default function IntervieweeDashboard() {
     })
     setFilteredInterviews(interviews)
   }
+
+  const handleBooking = async (interviewId: string) => {
+    try {
+      setBookingId(interviewId); // Show loading state for the specific card
+      const response = await fetch(`/api/interviews/${interviewId}/book`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to book interview');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Interview booked successfully!');
+        // You might want to redirect to a booking confirmation page
+        // router.push(`/interviewee/bookings/${data.data.id}`);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      toast.error('Failed to book interview');
+      console.error('Error booking interview:', error);
+    } finally {
+      setBookingId(null);
+    }
+  };
 
   if (loading) {
     return <div>Loading...</div>
@@ -219,8 +251,12 @@ export default function IntervieweeDashboard() {
               <Button variant="outline" asChild>
                 <Link href={`/interviewee/interview/${interview.id}`}>View Details</Link>
               </Button>
-              <Button>
-                <Briefcase className="mr-2 h-4 w-4" /> Book Interview
+              <Button 
+                onClick={() => handleBooking(interview.id)}
+                disabled={bookingId === interview.id}
+              >
+                <Briefcase className="mr-2 h-4 w-4" />
+                {bookingId === interview.id ? 'Booking...' : 'Book Interview'}
               </Button>
             </CardFooter>
           </Card>
