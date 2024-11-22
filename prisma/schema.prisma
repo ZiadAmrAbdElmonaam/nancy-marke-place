@@ -16,6 +16,8 @@ model User {
   name              String
   interviewerProfile InterviewerProfile?
   interviews        Interview[]
+  interviewerBookings InterviewBooking[] @relation("InterviewerBookings")
+  intervieweeBookings InterviewBooking[] @relation("IntervieweeBookings")
 }
 
 model InterviewerProfile {
@@ -48,9 +50,28 @@ model Interview {
   interviewer      User              @relation(fields: [interviewerId], references: [id])
   interviewerProfile InterviewerProfile @relation(fields: [interviewerProfileId], references: [id])
   interviewerProfileId String
+  bookings         InterviewBooking[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
   @@index([interviewerId])
   @@index([interviewerProfileId])
+}
+
+model InterviewBooking {
+  id            String    @id @default(cuid())
+  interviewId   String
+  interview     Interview @relation(fields: [interviewId], references: [id])
+  interviewerId String
+  interviewer   User      @relation("InterviewerBookings", fields: [interviewerId], references: [id])
+  intervieweeId String
+  interviewee   User      @relation("IntervieweeBookings", fields: [intervieweeId], references: [id])
+  status        String    @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
+  billId        String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([interviewId])
+  @@index([interviewerId])
+  @@index([intervieweeId])
 } 

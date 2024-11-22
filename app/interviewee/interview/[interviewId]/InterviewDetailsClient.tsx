@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Briefcase, Building } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Interview {
   id: string
@@ -24,6 +25,7 @@ interface Interview {
 export default function InterviewDetailsClient({ interviewId }: { interviewId: string }) {
   const [interview, setInterview] = useState<Interview | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isBooking, setIsBooking] = useState(false)
 
   useEffect(() => {
     const fetchInterview = async () => {
@@ -41,6 +43,36 @@ export default function InterviewDetailsClient({ interviewId }: { interviewId: s
 
     fetchInterview()
   }, [interviewId])
+
+  const handleBooking = async () => {
+    try {
+      setIsBooking(true)
+      const response = await fetch(`/api/interviews/${interviewId}/book`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to book interview')
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        toast.success('Interview booked successfully!')
+        // You might want to redirect to a booking confirmation page
+        // router.push(`/interviewee/bookings/${data.data.id}`);
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (error) {
+      toast.error('Failed to book interview')
+      console.error('Error booking interview:', error)
+    } finally {
+      setIsBooking(false)
+    }
+  }
 
   if (loading) {
     return <div>Loading...</div>
@@ -97,8 +129,13 @@ export default function InterviewDetailsClient({ interviewId }: { interviewId: s
           </div>
         </CardContent>
         <CardFooter>
-          <Button className="w-full">
-            <Briefcase className="mr-2 h-4 w-4" /> Book This Interview
+          <Button 
+            className="w-full" 
+            onClick={handleBooking}
+            disabled={isBooking}
+          >
+            <Briefcase className="mr-2 h-4 w-4" />
+            {isBooking ? 'Booking...' : 'Book This Interview'}
           </Button>
         </CardFooter>
       </Card>
