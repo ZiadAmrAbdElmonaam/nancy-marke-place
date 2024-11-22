@@ -1,14 +1,20 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+interface Props {
+  params: Promise<{ interviewId: string }> | { interviewId: string }
+}
+
 export async function GET(
   request: Request,
-  { params }: { params: { interviewId: string } }
+  { params }: Props
 ) {
   try {
+    const resolvedParams = await params;
+    
     const interview = await prisma.interview.findUnique({
       where: {
-        id: params.interviewId
+        id: resolvedParams.interviewId
       },
       include: {
         interviewer: true,

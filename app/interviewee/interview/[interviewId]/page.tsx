@@ -1,14 +1,16 @@
 import { Suspense } from 'react';
 import InterviewDetailsClient from './InterviewDetailsClient';
 
-export default function InterviewDetails({
-  params
-}: {
-  params: { interviewId: string }
-}) {
+interface Props {
+  params: Promise<{ interviewId: string }> | { interviewId: string }
+}
+
+export default async function InterviewDetails({ params }: Props) {
+  const resolvedParams = await params;
+  
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <InterviewDetailsClient interviewId={params.interviewId} />
+      <InterviewDetailsClient interviewId={resolvedParams.interviewId} />
     </Suspense>
   );
 } 

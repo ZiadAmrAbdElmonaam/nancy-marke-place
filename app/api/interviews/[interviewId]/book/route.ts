@@ -3,22 +3,28 @@ import { NextResponse } from 'next/server';
 
 const TEMP_USER_ID = "default-user-id";
 
+interface Props {
+  params: Promise<{ interviewId: string }> | { interviewId: string }
+}
+
 export async function POST(
   request: Request,
-  { params }: { params: { interviewId: string } }
+  { params }: Props
 ) {
-  if (!params?.interviewId) {
-    return NextResponse.json(
-      { error: 'Interview ID is required' },
-      { status: 400 }
-    );
-  }
-
   try {
+    const resolvedParams = await params;
+
+    if (!resolvedParams?.interviewId) {
+      return NextResponse.json(
+        { error: 'Interview ID is required' },
+        { status: 400 }
+      );
+    }
+
     // First, find the interview
     const interview = await prisma.interview.findUnique({
       where: {
-        id: params.interviewId
+        id: resolvedParams.interviewId
       },
       include: {
         interviewer: true,
