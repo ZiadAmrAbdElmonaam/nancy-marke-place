@@ -1,189 +1,203 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import Image from 'next/image';
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
-interface InterviewerProfile {
-  id: string;
-  userId: string;
-  title: string;
-  imageUrl: string | null | undefined;
-  experience: number;
-  description: string;
-  country: string;
-  company: string;
-  linkedin: string | null | undefined;
-  github: string | null | undefined;
-  twitter: string | null | undefined;
-  createdAt?: Date;
-  updatedAt?: Date;
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  company: z.string().min(1, "Company is required"),
+  position: z.string().min(1, "Position is required"),
+  country: z.string().min(1, "Country is required"),
+  experience: z.number().min(0, "Experience must be a positive number"),
+  linkedin: z.string().url().optional().or(z.literal("")),
+  github: z.string().url().optional().or(z.literal("")),
+  twitter: z.string().url().optional().or(z.literal("")),
+})
+
+type ProfileFormValues = z.infer<typeof formSchema>
+
+interface ProfileFormProps {
+  existingProfile: ProfileFormValues | null
 }
 
-export default function InterviewerProfileForm({
-  existingProfile
-}: {
-  existingProfile: InterviewerProfile | null;
-}) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState<string>(existingProfile?.imageUrl || '');
+export default function InterviewerProfileForm({ existingProfile }: ProfileFormProps) {
+  const router = useRouter()
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: existingProfile || {
+      name: "",
+      company: "",
+      position: "",
+      country: "",
+      experience: 0,
+      linkedin: "",
+      github: "",
+      twitter: "",
+    },
+  })
 
-  const [formData, setFormData] = useState({
-    title: existingProfile?.title || '',
-    imageUrl: existingProfile?.imageUrl || '',
-    experience: existingProfile?.experience || 0,
-    description: existingProfile?.description || '',
-    country: existingProfile?.country || '',
-    company: existingProfile?.company || '',
-    linkedin: existingProfile?.linkedin || '',
-    github: existingProfile?.github || '',
-    twitter: existingProfile?.twitter || '',
-  });
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Just create a preview URL for the UI
-      const url = URL.createObjectURL(file);
-      setPreview(url);
-      // For now, we'll just use the file name as the imageUrl
-      setFormData(prev => ({ ...prev, imageUrl: file.name }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+  const onSubmit = async (data: ProfileFormValues) => {
     try {
-      const response = await fetch('/api/interviewer/profile', {
-        method: existingProfile ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const endpoint = existingProfile ? '/api/interviewer/profile' : '/api/interviewer/profile'
+      const method = existingProfile ? 'PUT' : 'POST'
+      
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
 
-      if (!response.ok) throw new Error('Failed to save profile');
+      if (!response.ok) {
+        throw new Error('Failed to save profile')
+      }
 
-      toast.success('Profile saved successfully');
-      router.refresh();
+      toast.success(existingProfile ? 'Profile updated!' : 'Profile created!')
+      router.refresh()
     } catch (error) {
-      toast.error('Failed to save profile');
-    } finally {
-      setLoading(false);
+      toast.error('Something went wrong')
     }
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-      <div>
-        <label className="block text-sm font-medium mb-2">Professional Title</label>
-        <Input
-          required
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="e.g. Senior Software Engineer"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">Current Company</label>
-        <Input
-          required
-          value={formData.company}
-          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-          placeholder="e.g. Google, Meta, etc."
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">Country</label>
-        <Input
-          required
-          value={formData.country}
-          onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-          placeholder="e.g. United States, Canada, etc."
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">Profile Image</label>
-        <div className="space-y-4">
-          {preview && (
-            <div className="relative w-32 h-32 rounded-full overflow-hidden">
-              <Image
-                src={preview}
-                alt="Profile preview"
-                fill
-                className="object-cover"
-              />
-            </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input placeholder="Your name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">Years of Experience</label>
-        <Input
-          type="number"
-          required
-          value={formData.experience}
-          onChange={(e) => setFormData({ ...formData, experience: parseInt(e.target.value) })}
-          min="0"
         />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-2">Description</label>
-        <Textarea
-          required
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Tell us about your experience and expertise..."
-          rows={4}
+        
+        <FormField
+          control={form.control}
+          name="company"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company</FormLabel>
+              <FormControl>
+                <Input placeholder="Your company" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-2">LinkedIn Profile</label>
-        <Input
-          value={formData.linkedin}
-          onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-          placeholder="https://linkedin.com/in/..."
+        <FormField
+          control={form.control}
+          name="position"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Position</FormLabel>
+              <FormControl>
+                <Input placeholder="Your position" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-2">GitHub Profile</label>
-        <Input
-          value={formData.github}
-          onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-          placeholder="https://github.com/..."
+        <FormField
+          control={form.control}
+          name="experience"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Years of Experience</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="Years of experience"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-2">Twitter Profile</label>
-        <Input
-          value={formData.twitter}
-          onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
-          placeholder="https://twitter.com/..."
+        <FormField
+          control={form.control}
+          name="country"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Country</FormLabel>
+              <FormControl>
+                <Input placeholder="Your country" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <Button type="submit" disabled={loading}>
-        {loading ? 'Saving...' : (existingProfile ? 'Update Profile' : 'Create Profile')}
-      </Button>
-    </form>
-  );
+        <FormField
+          control={form.control}
+          name="linkedin"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>LinkedIn (optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Your LinkedIn URL" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="github"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>GitHub (optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Your GitHub URL" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="twitter"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Twitter (optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Your Twitter URL" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit">
+          {existingProfile ? 'Update Profile' : 'Create Profile'}
+        </Button>
+      </form>
+    </Form>
+  )
 } 

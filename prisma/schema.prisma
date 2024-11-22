@@ -11,61 +11,46 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
-  name      String
-  positions Position[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  name              String
   interviewerProfile InterviewerProfile?
-}
-
-model Position {
-  id                String        @id @default(cuid())
-  title            String
-  yearsOfExperience Int
-  requiredSkills   String[]
-  description      String
-  interviewer      User?         @relation(fields: [interviewerId], references: [id])
-  interviewerId    String?
-  applications     Application[]
-  socialLinks      SocialLink[]
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-}
-
-model Application {
-  id           String    @id @default(cuid())
-  position     Position  @relation(fields: [positionId], references: [id])
-  positionId   String
-  candidateName String
-  email        String
-  resumeUrl    String?   // Optional field for resume/CV link
-  coverLetter  String?   // Optional field for cover letter
-  status       String    @default("PENDING") // e.g., "PENDING", "REVIEWING", "ACCEPTED", "REJECTED"
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-}
-
-model SocialLink {
-  id         String   @id @default(cuid())
-  platform   String
-  url        String
-  position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
-  positionId String
+  interviews        Interview[]
 }
 
 model InterviewerProfile {
-  id            String    @id @default(cuid())
-  userId        String    @unique
-  user          User      @relation(fields: [userId], references: [id])
-  title         String
-  imageUrl      String?
-  experience    Int
-  description   String    @db.Text
-  country       String    // Added field
-  company       String    // Added field
-  linkedin      String?
-  github        String?
-  twitter       String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  imageUrl    String?
+  experience  Int
+  description String   @db.Text
+  country     String
+  company     String
+  linkedin    String?
+  github      String?
+  twitter     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  interviews  Interview[]
+}
+
+model Interview {
+  id                String            @id @default(cuid())
+  title            String
+  techStack        String
+  programmingLanguage String
+  domain           String
+  price            Decimal           @db.Decimal(10, 2)
+  questions        String[]
+  interviewerId    String
+  interviewer      User              @relation(fields: [interviewerId], references: [id])
+  interviewerProfile InterviewerProfile @relation(fields: [interviewerProfileId], references: [id])
+  interviewerProfileId String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([interviewerId])
+  @@index([interviewerProfileId])
 } 

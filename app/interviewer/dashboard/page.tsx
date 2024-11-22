@@ -10,13 +10,14 @@ export default async function InterviewerDashboard() {
   })
 
   const formattedProfile = profile ? {
-    ...profile,
-    imageUrl: profile.imageUrl || undefined,
+    name: profile.title,
+    company: profile.company,
+    position: profile.description,
+    experience: profile.experience,
+    country: profile.country,
     linkedin: profile.linkedin || undefined,
     github: profile.github || undefined,
     twitter: profile.twitter || undefined,
-    country: profile.country,
-    company: profile.company,
   } : null;
 
   return (

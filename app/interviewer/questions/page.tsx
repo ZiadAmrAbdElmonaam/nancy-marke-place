@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { X } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Question {
   id: string
@@ -24,16 +25,42 @@ export default function QuestionsPage() {
   const [techStack, setTechStack] = useState('')
   const [programmingLanguage, setProgrammingLanguage] = useState('')
   const [domain, setDomain] = useState('')
+  const [price, setPrice] = useState('')
   const [questions, setQuestions] = useState<Question[]>([{ id: '1', text: '' }])
 
-  const handleQuestionsSubmit = (e: React.FormEvent) => {
+  const handleQuestionsSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log({
-      techStack,
-      programmingLanguage,
-      domain,
-      questions: questions.map(q => q.text)
-    })
+    
+    try {
+      const response = await fetch('/api/interviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          techStack,
+          programmingLanguage,
+          domain,
+          price: parseFloat(price),
+          questions: questions.map(q => q.text)
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create interview')
+      }
+
+      toast.success('Interview created successfully')
+      // Reset form
+      setTechStack('')
+      setProgrammingLanguage('')
+      setDomain('')
+      setPrice('')
+      setQuestions([{ id: '1', text: '' }])
+    } catch (error) {
+      toast.error('Failed to create interview')
+      console.error('Error creating interview:', error)
+    }
   }
 
   const addQuestion = () => {
@@ -94,6 +121,19 @@ export default function QuestionsPage() {
                   <SelectItem value="devops">DevOps</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="price">Price (USD)</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g., 19.99"
+              />
             </div>
 
             <div className="space-y-4">
